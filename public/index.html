@@ -24,12 +24,9 @@
     font: 16px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   }
   .wrap { max-width: 860px; margin: 0 auto; padding: 32px 20px 80px; }
-  /* The logo carries the wordmark, so it stands in for the page heading. */
-  .logo { display: block; width: 250px; max-width: 72%; margin: 0 0 2px -8px; }
-  h1 {
-    position: absolute; width: 1px; height: 1px; overflow: hidden;
-    clip: rect(0 0 0 0); white-space: nowrap;   /* kept for screen readers */
-  }
+  .header { display: flex; align-items: center; gap: 12px; margin-bottom: 6px; }
+  .header img { height: 56px; width: auto; flex: none; }
+  h1 { font-size: 24px; margin: 0; letter-spacing: -0.2px; }
   .sub { color: var(--muted); margin: 0 0 26px; font-size: 14px; }
 
   .card {
@@ -100,7 +97,7 @@
     align-items: center; justify-content: center; z-index: 20; padding: 20px;
   }
   #login .box { width: 100%; max-width: 320px; text-align: center; }
-  #login .logo-lg { width: 260px; max-width: 100%; margin: 0 auto 14px; display: block; }
+  #login .logo-lg { width: 210px; max-width: 80%; margin: 0 auto 16px; display: block; }
   #login p { color: var(--muted); font-size: 14px; margin: 0 0 18px; }
   #login input {
     width: 100%; background: #11141a; color: var(--text); border: 1px solid var(--line);
@@ -118,8 +115,10 @@
 </head>
 <body>
 <div class="wrap">
-  <img class="logo" src="/logo.webp" alt="Gym Progress" />
-  <h1>Gym Progress</h1>
+  <div class="header">
+    <img src="/logo.webp" alt="" />
+    <h1>Gym Progress</h1>
+  </div>
   <p class="sub">Upload today's photos. Look back whenever you want.</p>
 
   <div class="card" id="tracker"></div>

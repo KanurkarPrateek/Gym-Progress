@@ -4,6 +4,20 @@ Upload a set of photos each day; the page turns them into a streak tracker and a
 day-by-day timeline. Photos live in a private Supabase Storage bucket (`gym-photos`),
 one folder per date.
 
+## What it looks like
+
+The site opens locked. One shared password, set as an environment variable.
+
+<img src="docs/login.png" alt="Password screen" width="520" />
+
+Once unlocked: streak stats and a 12-week calendar on top, the upload card, then every
+day you've logged, newest first. Same pose order each day, so comparing a column top to
+bottom is the progress check.
+
+<img src="docs/screenshot.png" alt="The tracker and timeline" width="760" />
+
+*(The photos above are generated placeholders, not real progress pics.)*
+
 ## Deploy to Vercel
 
 1. Push this folder to a GitHub repo. `.env` is gitignored — check that it did **not** get
@@ -62,7 +76,10 @@ api/
   photo.js    DELETE remove one photo  ?date=&file=
   image.js    GET    proxy a photo out of the private bucket
 lib/store.js  Supabase calls + the password check, shared by all handlers
-public/index.html   the entire frontend
+public/
+  index.html  the entire frontend
+  logo.webp   the logo, used in the header and on the password screen
+  icon.png    favicon / home-screen icon
 server.js     local dev server, runs the same handlers
 vercel.json   static root + the /uploads/:date/:file rewrite
 ```
