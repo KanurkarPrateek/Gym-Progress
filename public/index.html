@@ -85,8 +85,10 @@
   .thumb:hover .del { opacity: 1; }
   .empty { color: var(--muted); text-align: center; padding: 40px 0; }
 
+  /* Visible from the first paint, hidden only once the API confirms the key.
+     Otherwise the page shell flashes before the 401 lands. */
   #login {
-    position: fixed; inset: 0; background: var(--bg); display: none;
+    position: fixed; inset: 0; background: var(--bg); display: flex;
     align-items: center; justify-content: center; z-index: 20; padding: 20px;
   }
   #login .box { width: 100%; max-width: 320px; text-align: center; }
@@ -367,6 +369,7 @@ async function load() {
     if (e instanceof Unauthorized) return; // the login overlay is up
     throw e;
   }
+  $('#login').style.display = 'none'; // key accepted — reveal the page
   const daysEl = $('#days');
 
   renderTracker(days);
