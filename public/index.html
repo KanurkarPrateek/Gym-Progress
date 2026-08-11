@@ -1,0 +1,426 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Gym Progress</title>
+<style>
+  :root {
+    --bg: #0f1115;
+    --card: #181b22;
+    --line: #262b36;
+    --text: #e8eaf0;
+    --muted: #9aa3b2;
+    --accent: #4ade80;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 16px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  }
+  .wrap { max-width: 860px; margin: 0 auto; padding: 32px 20px 80px; }
+  h1 { font-size: 26px; margin: 0 0 4px; }
+  .sub { color: var(--muted); margin: 0 0 28px; font-size: 14px; }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 18px;
+    margin-bottom: 28px;
+  }
+  label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+  input[type=date] {
+    background: #11141a; color: var(--text); border: 1px solid var(--line);
+    border-radius: 8px; padding: 9px 12px; font-size: 15px; width: 190px;
+  }
+  .drop {
+    margin-top: 14px; border: 1.5px dashed var(--line); border-radius: 10px;
+    padding: 26px; text-align: center; color: var(--muted); cursor: pointer;
+    transition: border-color .15s, color .15s;
+  }
+  .drop:hover, .drop.over { border-color: var(--accent); color: var(--text); }
+  .drop b { color: var(--text); }
+  button {
+    margin-top: 14px; background: var(--accent); color: #08110b; border: 0;
+    border-radius: 8px; padding: 10px 18px; font-size: 15px; font-weight: 600; cursor: pointer;
+  }
+  button:disabled { opacity: .5; cursor: default; }
+  .status { margin-top: 10px; font-size: 13px; color: var(--muted); min-height: 18px; }
+
+  .stats { display: flex; flex-wrap: wrap; gap: 30px; }
+  .stat b { display: block; font-size: 26px; line-height: 1.2; }
+  .stat b small { font-size: 13px; font-weight: 400; color: var(--muted); }
+  .stat span { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .6px; }
+  .stat.hot b { color: var(--accent); }
+
+  /* upload calendar — one square per day, last 12 weeks */
+  .heat-wrap { margin-top: 20px; padding-top: 18px; border-top: 1px solid var(--line); }
+  .heat-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .heat-head span { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .6px; }
+  .heat { display: grid; grid-auto-flow: column; grid-template-rows: repeat(7, 13px); gap: 3px; overflow-x: auto; }
+  .cell { width: 13px; height: 13px; border-radius: 3px; background: #252b37; }
+  .cell.l1 { background: #14532d; }
+  .cell.l2 { background: #16a34a; }
+  .cell.l3 { background: var(--accent); }
+  .cell.future { background: transparent; }
+  .cell.today { box-shadow: 0 0 0 1.5px var(--muted); }
+  .legend { display: flex; align-items: center; gap: 4px; font-size: 11px; color: var(--muted); }
+  .legend .cell { width: 11px; height: 11px; }
+  .miss { margin-top: 12px; font-size: 13px; color: var(--muted); }
+
+  .day { margin-bottom: 26px; }
+  .day h2 { font-size: 15px; margin: 0 0 10px; display: flex; align-items: baseline; gap: 10px; }
+  .day h2 span { font-weight: 400; color: var(--muted); font-size: 13px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+  .thumb { position: relative; aspect-ratio: 3/4; border-radius: 10px; overflow: hidden; background: #11141a; }
+  .thumb img { width: 100%; height: 100%; object-fit: cover; cursor: zoom-in; display: block; }
+  .thumb .del {
+    position: absolute; top: 6px; right: 6px; width: 26px; height: 26px; border-radius: 50%;
+    background: rgba(0,0,0,.6); color: #fff; border: 0; font-size: 15px; line-height: 1;
+    margin: 0; padding: 0; cursor: pointer; opacity: 0; transition: opacity .15s;
+  }
+  .thumb:hover .del { opacity: 1; }
+  .empty { color: var(--muted); text-align: center; padding: 40px 0; }
+
+  #login {
+    position: fixed; inset: 0; background: var(--bg); display: none;
+    align-items: center; justify-content: center; z-index: 20; padding: 20px;
+  }
+  #login .box { width: 100%; max-width: 320px; text-align: center; }
+  #login h2 { font-size: 20px; margin: 0 0 6px; }
+  #login p { color: var(--muted); font-size: 14px; margin: 0 0 18px; }
+  #login input {
+    width: 100%; background: #11141a; color: var(--text); border: 1px solid var(--line);
+    border-radius: 8px; padding: 11px 13px; font-size: 15px; text-align: center;
+  }
+  #login button { width: 100%; }
+  #login .err { color: #f87171; font-size: 13px; min-height: 18px; margin-top: 10px; }
+
+  #lightbox {
+    position: fixed; inset: 0; background: rgba(0,0,0,.9); display: none;
+    align-items: center; justify-content: center; cursor: zoom-out; z-index: 10;
+  }
+  #lightbox img { max-width: 94vw; max-height: 94vh; border-radius: 8px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Gym Progress</h1>
+  <p class="sub">Upload today's photos. Look back whenever you want.</p>
+
+  <div class="card" id="tracker"></div>
+
+  <div class="card">
+    <label for="date">Date</label>
+    <input type="date" id="date" />
+    <div class="drop" id="drop">
+      <b>Choose photos</b> or drag them here<br />
+      <small>you can pick several at once</small>
+    </div>
+    <input type="file" id="file" accept="image/*" multiple hidden />
+    <button id="save" disabled>Save photos</button>
+    <div class="status" id="status"></div>
+  </div>
+
+  <div id="days"></div>
+</div>
+
+<div id="lightbox"><img alt="" /></div>
+
+<div id="login">
+  <div class="box">
+    <h2>Gym Progress</h2>
+    <p>Enter your password</p>
+    <input type="password" id="pw" autocomplete="current-password" />
+    <button id="pwgo">Unlock</button>
+    <div class="err" id="pwerr"></div>
+  </div>
+</div>
+
+<script>
+const $ = (s) => document.querySelector(s);
+const dateInput = $('#date');
+const fileInput = $('#file');
+const drop = $('#drop');
+const saveBtn = $('#save');
+const statusEl = $('#status');
+
+let picked = [];
+
+// --- password gate ---
+// The key rides in a header for fetch calls and in a cookie for <img> requests.
+const getKey = () => localStorage.getItem('gym_key') || '';
+
+function setKey(k) {
+  localStorage.setItem('gym_key', k);
+  document.cookie =
+    `gym_key=${encodeURIComponent(k)};path=/;max-age=31536000;samesite=lax` +
+    (location.protocol === 'https:' ? ';secure' : '');
+}
+
+class Unauthorized extends Error {}
+
+async function api(path, opts = {}) {
+  const res = await fetch(path, {
+    ...opts,
+    headers: { ...(opts.headers || {}), 'x-gym-key': getKey() },
+  });
+  if (res.status === 401) {
+    showLogin();
+    throw new Unauthorized('locked');
+  }
+  return res;
+}
+
+function showLogin(msg = '') {
+  $('#login').style.display = 'flex';
+  $('#pwerr').textContent = msg;
+  $('#pw').focus();
+}
+
+async function tryUnlock() {
+  setKey($('#pw').value);
+  const res = await fetch('/api/days', { headers: { 'x-gym-key': getKey() } });
+  if (res.status === 401) {
+    $('#pwerr').textContent = 'Wrong password';
+    return;
+  }
+  $('#login').style.display = 'none';
+  $('#pw').value = '';
+  load();
+}
+
+$('#pwgo').onclick = tryUnlock;
+$('#pw').onkeydown = (e) => {
+  if (e.key === 'Enter') tryUnlock();
+};
+
+const today = () => new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD, local time
+dateInput.value = today();
+dateInput.max = today();
+
+// --- picking files ---
+drop.onclick = () => fileInput.click();
+fileInput.onchange = () => setPicked([...fileInput.files]);
+drop.ondragover = (e) => { e.preventDefault(); drop.classList.add('over'); };
+drop.ondragleave = () => drop.classList.remove('over');
+drop.ondrop = (e) => {
+  e.preventDefault();
+  drop.classList.remove('over');
+  setPicked([...e.dataTransfer.files].filter((f) => f.type.startsWith('image/')));
+};
+
+function setPicked(files) {
+  picked = files;
+  saveBtn.disabled = files.length === 0;
+  statusEl.textContent = files.length ? `${files.length} photo${files.length > 1 ? 's' : ''} ready` : '';
+}
+
+// Shrink to max 1600px and re-encode as JPEG so storage stays small.
+function toDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const scale = Math.min(1, 1600 / Math.max(img.width, img.height));
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.round(img.width * scale);
+      canvas.height = Math.round(img.height * scale);
+      canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+      URL.revokeObjectURL(img.src);
+      resolve(canvas.toDataURL('image/jpeg', 0.85));
+    };
+    img.onerror = reject;
+    img.src = URL.createObjectURL(file);
+  });
+}
+
+// Uploaded one photo per request — hosted functions cap request bodies at 4.5MB.
+saveBtn.onclick = async () => {
+  saveBtn.disabled = true;
+  const total = picked.length;
+  let saved = 0;
+  try {
+    for (const [i, f] of picked.entries()) {
+      statusEl.textContent = `Saving ${i + 1} of ${total}…`;
+      const res = await api('/api/upload', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ date: dateInput.value, dataUrl: await toDataUrl(f), seq: i }),
+      });
+      const out = await res.json();
+      if (!res.ok) throw new Error(out.error || 'upload failed');
+      saved++;
+    }
+    statusEl.textContent = `Saved ${saved} photo${saved > 1 ? 's' : ''} to ${dateInput.value}`;
+    setPicked([]);
+    fileInput.value = '';
+    load();
+  } catch (e) {
+    if (e instanceof Unauthorized) return;
+    statusEl.textContent = `Error after ${saved} of ${total}: ${e.message}`;
+    saveBtn.disabled = picked.length === 0;
+  }
+};
+
+// --- timeline ---
+const prettyDate = (d) =>
+  new Date(d + 'T00:00:00').toLocaleDateString(undefined, {
+    weekday: 'short', day: 'numeric', month: 'short', year: 'numeric',
+  });
+
+function daysAgo(d) {
+  const diff = Math.round((new Date(today() + 'T00:00:00') - new Date(d + 'T00:00:00')) / 86400000);
+  if (diff === 0) return 'today';
+  if (diff === 1) return 'yesterday';
+  return `${diff} days ago`;
+}
+
+// --- date arithmetic (noon-anchored so DST can't shift a day) ---
+const DAY_MS = 86400000;
+const keyOf = (d) => d.toLocaleDateString('en-CA');
+const atNoon = (k) => new Date(k + 'T12:00:00');
+const shift = (k, n) => keyOf(new Date(atNoon(k).getTime() + n * DAY_MS));
+const between = (a, b) => Math.round((atNoon(a) - atNoon(b)) / DAY_MS);
+
+function streaks(dateSet) {
+  let longest = 0, run = 0, prev = null;
+  for (const d of [...dateSet].sort()) {
+    run = prev && between(d, prev) === 1 ? run + 1 : 1;
+    longest = Math.max(longest, run);
+    prev = d;
+  }
+  // A streak stays alive today until the day is over, so it may end today or yesterday.
+  let cursor = dateSet.has(today()) ? today() : dateSet.has(shift(today(), -1)) ? shift(today(), -1) : null;
+  let current = 0;
+  while (cursor && dateSet.has(cursor)) {
+    current++;
+    cursor = shift(cursor, -1);
+  }
+  return { current, longest };
+}
+
+const WEEKS = 12;
+
+function heatmap(countByDate) {
+  const t = today();
+  const dow = (atNoon(t).getDay() + 6) % 7;           // 0 = Monday
+  const start = shift(t, -dow - (WEEKS - 1) * 7);     // Monday, 12 weeks back
+  let cells = '';
+  for (let i = 0; i < WEEKS * 7; i++) {
+    const d = shift(start, i);
+    const n = countByDate[d] || 0;
+    const cls = [
+      'cell',
+      d > t ? 'future' : n >= 5 ? 'l3' : n >= 3 ? 'l2' : n >= 1 ? 'l1' : '',
+      d === t ? 'today' : '',
+    ].filter(Boolean).join(' ');
+    cells += `<div class="${cls}" title="${d}${n ? ` — ${n} photo${n > 1 ? 's' : ''}` : ''}"></div>`;
+  }
+  return `
+    <div class="heat-wrap">
+      <div class="heat-head">
+        <span>Last ${WEEKS} weeks</span>
+        <div class="legend">less
+          <div class="cell"></div><div class="cell l1"></div>
+          <div class="cell l2"></div><div class="cell l3"></div>more
+        </div>
+      </div>
+      <div class="heat">${cells}</div>
+    </div>`;
+}
+
+function renderTracker(days) {
+  const dateSet = new Set(days.map((d) => d.date));
+  const countByDate = Object.fromEntries(days.map((d) => [d.date, d.photos.length]));
+  const { current, longest } = streaks(dateSet);
+  const total = days.reduce((n, d) => n + d.photos.length, 0);
+  const tracking = days.length ? between(today(), days[days.length - 1].date) + 1 : 0;
+  const last = days.length ? days[0].date : null;
+
+  let nudge = '';
+  if (!days.length) nudge = 'Upload your first set below to start the streak.';
+  else if (last === today()) nudge = "Logged today. That's the streak alive.";
+  else if (current > 0) nudge = `On a ${current}-day streak — upload today to keep it.`;
+  else nudge = `Last upload ${daysAgo(last)}. Upload today to start again.`;
+
+  $('#tracker').innerHTML = `
+    <div class="stats">
+      <div class="stat ${current > 0 ? 'hot' : ''}"><b>${current > 0 ? '🔥 ' : ''}${current}</b><span>day streak</span></div>
+      <div class="stat"><b>${longest}</b><span>best streak</span></div>
+      <div class="stat"><b>${days.length}</b><span>days logged</span></div>
+      <div class="stat"><b>${total}</b><span>photos</span></div>
+      <div class="stat"><b>${tracking}</b><span>days tracking</span></div>
+      <div class="stat"><b><small>${last ? daysAgo(last) : '—'}</small></b><span>last upload</span></div>
+    </div>
+    ${heatmap(countByDate)}
+    <div class="miss">${nudge}</div>`;
+}
+
+async function load() {
+  let days;
+  try {
+    days = await (await api('/api/days')).json();
+  } catch (e) {
+    if (e instanceof Unauthorized) return; // the login overlay is up
+    throw e;
+  }
+  const daysEl = $('#days');
+
+  renderTracker(days);
+
+  if (days.length === 0) {
+    daysEl.innerHTML = '<div class="empty">No photos yet — upload your first set above.</div>';
+    return;
+  }
+
+  daysEl.innerHTML = days
+    .map(
+      (d) => `
+      <div class="day">
+        <h2>${prettyDate(d.date)} <span>${daysAgo(d.date)} · ${d.photos.length} photo${d.photos.length > 1 ? 's' : ''}</span></h2>
+        <div class="grid">
+          ${d.photos
+            .map(
+              (p) => `<div class="thumb">
+                 <img src="/uploads/${d.date}/${p}" loading="lazy" alt="${d.date}" />
+                 <button class="del" data-date="${d.date}" data-file="${p}" title="Delete">×</button>
+               </div>`
+            )
+            .join('')}
+        </div>
+      </div>`
+    )
+    .join('');
+}
+
+// --- delete + lightbox ---
+const lightbox = $('#lightbox');
+document.addEventListener('click', async (e) => {
+  if (e.target.classList.contains('del')) {
+    if (!confirm('Delete this photo?')) return;
+    const { date, file } = e.target.dataset;
+    try {
+      await api(`/api/photo?date=${date}&file=${encodeURIComponent(file)}`, { method: 'DELETE' });
+      load();
+    } catch (err) {
+      if (!(err instanceof Unauthorized)) alert('Delete failed: ' + err.message);
+    }
+  } else if (e.target.tagName === 'IMG' && e.target.closest('.thumb')) {
+    lightbox.querySelector('img').src = e.target.src;
+    lightbox.style.display = 'flex';
+  } else if (e.target.closest('#lightbox')) {
+    lightbox.style.display = 'none';
+  }
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') lightbox.style.display = 'none';
+});
+
+if (getKey()) setKey(getKey()); // refresh the cookie so <img> requests stay authorized
+load();
+</script>
+</body>
+</html>

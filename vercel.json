@@ -1,0 +1,7 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "outputDirectory": "public",
+  "rewrites": [
+    { "source": "/uploads/:date/:file", "destination": "/api/image?date=:date&file=:file" }
+  ]
+}
