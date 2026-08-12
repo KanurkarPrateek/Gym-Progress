@@ -25,12 +25,13 @@ if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SECRET_KEY) {
   process.exit(1);
 }
 
-const { ensureBucket, isDate, isSafeFile } = require('./lib/store');
+const { ensureBucket, isDate, isSafeFile, accounts } = require('./lib/store');
 const handlers = {
   '/api/days': require('./api/days'),
   '/api/upload': require('./api/upload'),
   '/api/photo': require('./api/photo'),
   '/api/image': require('./api/image'),
+  '/api/me': require('./api/me'),
 };
 
 const MIME = {
@@ -124,7 +125,12 @@ ensureBucket()
     server.listen(PORT, () => {
       console.log(`Gym progress tracker running at http://localhost:${PORT}`);
       console.log(`Photos stored in Supabase bucket "gym-photos" (${process.env.SUPABASE_URL})`);
-      if (!process.env.APP_PASSWORD) console.log('No APP_PASSWORD set — the password gate is off locally.');
+      const list = accounts();
+      console.log(
+        list.length
+          ? `Accounts: ${list.map((u) => u.name).join(', ')}`
+          : 'No accounts configured — the password gate is off locally.'
+      );
     });
   })
   .catch((e) => {

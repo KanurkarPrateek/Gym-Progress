@@ -27,6 +27,12 @@
   .header { display: flex; align-items: center; gap: 12px; margin-bottom: 6px; }
   .header img { height: 56px; width: auto; flex: none; }
   h1 { font-size: 24px; margin: 0; letter-spacing: -0.2px; }
+  .who { margin-left: auto; display: flex; align-items: center; gap: 12px; font-size: 13px; color: var(--muted); }
+  .who b { color: var(--accent); }
+  .who button {
+    margin: 0; padding: 0; background: none; border: 0; color: var(--muted);
+    font-size: 13px; text-decoration: underline; cursor: pointer;
+  }
   .sub { color: var(--muted); margin: 0 0 26px; font-size: 14px; }
 
   .card {
@@ -67,8 +73,9 @@
   .heat-head span { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .6px; }
   .heat { display: grid; grid-auto-flow: column; grid-template-rows: repeat(7, 13px); gap: 3px; overflow-x: auto; }
   .cell { width: 13px; height: 13px; border-radius: 3px; background: #252b37; }
-  .cell.l1 { background: #14532d; }
-  .cell.l2 { background: #16a34a; }
+  /* Shades derive from the account's accent, so the whole grid recolours per user. */
+  .cell.l1 { background: color-mix(in srgb, var(--accent) 30%, #11141a); }
+  .cell.l2 { background: color-mix(in srgb, var(--accent) 62%, #11141a); }
   .cell.l3 { background: var(--accent); }
   .cell.future { background: transparent; }
   .cell.today { box-shadow: 0 0 0 1.5px var(--muted); }
@@ -118,6 +125,10 @@
   <div class="header">
     <img src="/logo.webp" alt="" />
     <h1>Gym Progress</h1>
+    <div class="who" id="who" hidden>
+      <span id="whoName"></span>
+      <button id="signout">Sign out</button>
+    </div>
   </div>
   <p class="sub">Upload today's photos. Look back whenever you want.</p>
 
@@ -191,6 +202,20 @@ function showLogin(msg = '') {
   $('#pw').focus();
 }
 
+function signOut() {
+  localStorage.removeItem('gym_key');
+  document.cookie = 'gym_key=;path=/;max-age=0;samesite=lax';
+  location.reload();
+}
+
+// Label and colour the page for whichever account the password belongs to.
+async function loadMe() {
+  const me = await (await api('/api/me')).json();
+  document.documentElement.style.setProperty('--accent', me.accent);
+  $('#whoName').innerHTML = `Signed in as <b>${me.user}</b>`;
+  $('#who').hidden = false;
+}
+
 async function tryUnlock() {
   setKey($('#pw').value);
   const res = await fetch('/api/days', { headers: { 'x-gym-key': getKey() } });
@@ -204,6 +229,7 @@ async function tryUnlock() {
 }
 
 $('#pwgo').onclick = tryUnlock;
+$('#signout').onclick = signOut;
 $('#pw').onkeydown = (e) => {
   if (e.key === 'Enter') tryUnlock();
 };
@@ -378,6 +404,7 @@ async function load() {
     throw e;
   }
   $('#login').style.display = 'none'; // key accepted — reveal the page
+  loadMe();
   const daysEl = $('#days');
 
   renderTracker(days);
